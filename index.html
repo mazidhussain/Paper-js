@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper.js Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.15/paper-full.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            display: block;
+            height: 100vh;
+            width: 100vw;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="myCanvas"></canvas>
+
+    <script type="text/paperscript" canvas="myCanvas">
+
+        var path;
+        tool.minDistance = 10;
+        var data = localStorage.getItem('data');
+        
+        if (data) {
+            var storedObject = JSON.parse(data);
+            console.log(storedObject)
+            Object.keys(storedObject).forEach(function(key) {
+                var pathData = storedObject[key][0];
+                var width = storedObject[key][1];
+                var height = storedObject[key][2];
+
+                var newPath = new Path();
+                newPath.importJSON(pathData);
+
+                var pathLayer = new Layer();
+                pathLayer.addChild(newPath);
+            });
+        }
+
+        tool.onMouseDown = function(e) {
+            path = new Path();
+            path.add(e.point);
+            path.strokeColor = 'black';
+        }
+
+        tool.onMouseDrag = function(e) {
+            path.add(e.point);
+        }
+
+        tool.onMouseUp = function(e) {
+            var dataMap = new Map();
+            var key = (new Date()).getTime();
+            var width = path.bounds.width;
+            var height = path.bounds.height;
+            dataMap.set(key, [path.exportJSON(), width, height]);
+
+            var dataObject = {};
+            dataMap.forEach(function(value, key) {
+                dataObject[key] = value;
+            });
+
+            var existingData = localStorage.getItem('data');
+            if (existingData) {
+                var existingObject = JSON.parse(existingData);
+                Object.keys(existingObject).forEach(function(key) {
+                    dataObject[key] = existingObject[key];
+                });
+            }
+
+            var dataString = JSON.stringify(dataObject);
+            localStorage.setItem('data', dataString);
+        }
+
+         function resizeCanvas() {
+            var canvas = document.getElementById('myCanvas');
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            canvas.width = w;
+            canvas.height = h;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('load', resizeCanvas);
+
+        resizeCanvas();
+    </script>
+</body>
+
+</html>
